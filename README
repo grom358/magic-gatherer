@@ -1,0 +1,13 @@
+Client/Server for playing Magic the Gathering, supporting 1v1 modern format.
+
+==PLANNED FEATURES==
+* Support all cards in modern format
+* Server will enforce the rules as per the comprehensive rules
+* Server game engine will provide an API for cards to implement abilities/spells against
+
+==ROADMAP==
+* Oracle script for grabbing card information from gatherer.wizards.com
+* Create tool to allow user to submit deck build, server will check deck is legal
+* Build lobby, connect to game room
+* Create basic engine for playing game of magic
+* Expand engine to support all cards in modern format
