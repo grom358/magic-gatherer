@@ -1,0 +1,24 @@
+{
+  "author": "Cameron Zemek <grom358@gmail.com> (http://grom.zeminvaders.net)",
+  "name": "magic-duels",
+  "description": "A client/server for playing Magic the Gathering",
+  "version": "0.1.0",
+  "homepage": "http://github.com/grom358/magic-duels",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/grom358/magic-duels.git"
+  },
+  "engines": {
+    "node": "~0.7.0"
+  },
+  "dependencies": {
+    "jsdom": ">=0.2.10",
+    "reqeust": ">=2.9.100"
+  },
+  "licenses": [
+    {
+      "type": "GPL",
+      "url": "http://github.com/grom358/magic-duels/blob/master/LICENSE.txt"
+    }
+  ]
+}
