@@ -4,7 +4,8 @@
 
 var fs = require('fs'),
     path = require('path'),
-    jsdom = require('jsdom');
+    jsdom = require('jsdom'),
+    oracleUtils = require('./oracle_util.js');
 
 var jquery = fs.readFileSync('./jquery-1.7.1.min.js').toString();
 
@@ -64,14 +65,15 @@ function parseSet(setName, $) {
                     "id": [multiverseId]
                 };
             } else if (label === "Cost:") {
-                card.cost = text;
+                card.cost = text.replace(/\(/g, '{').replace(/\)/g, '}');
             } else if (label === "Type:") {
                 card.typeline = simplified;
             } else if (label === "Pow/Tgh:") {
                 var matches = text.match(/\((\d+|\*)\/(\d+|\*)\)/);
                 if (matches !== null) {
-                    card.power = matches[1];
-                    card.toughness = matches[2];
+                    var reNum = /\d+/;
+                    card.power = reNum.test(matches[1]) ? parseInt(matches[1]) : matches[1];
+                    card.toughness = reNum.test(matches[2]) ? parseInt(matches[2]) : matches[2];
                 }
             } else if (label === "Rules Text:") {
                 card.rules = text.split("\n");
@@ -94,20 +96,21 @@ function parseSet(setName, $) {
     });
 }
 
+function extend(obj, src) {
+    for (var key in src) {
+        obj[key] = src[key];
+    }
+}
+
 function processCard(card) {
     parseColors();
     parseCost();
-    parseTypes();
-    parseRules();
+    extend(card, oracleUtils.parseTypes(card.typeline));
+    extend(card, oracleUtils.parseRules(card.name, card.rules));
 
     function parseColors() {
         // Rule. 202.2
-        var colors = {};
-        ['W', 'U', 'B', 'R', 'G'].forEach(function(color) {
-            if (card.cost.indexOf(color) !== -1) {
-                colors[color] = true;
-            }
-        });
+        var colors = oracleUtils.getColors(card.cost);
         if ("color" in card) {
             var colorNameToSymbol = {
                 "Black": "B",
@@ -130,8 +133,6 @@ function processCard(card) {
      * Parse mana cost information
      */
     function parseCost() {
-        // Rule 202.3
-        // Calculate the CMC and translate costs into more machine friendly format
         card.cmc = 0;
         if (! "cost" in card) {
             return;
@@ -141,110 +142,9 @@ function processCard(card) {
             return;
         }
 
-        var costs = [];
-        var generic = /\d+/;
-        var pattern =/X|\d+|(B|G|R|U|W)|\(2\/(B|G|R|U|W)\)|\((B|G|R|U|W)\/(B|G|R|U|W)\)|\((B|G|R|U|W)\/P\)/g;
-        var matches = card.cost.match(pattern);
-        for (var i = 0, n = matches.length; i < n; ++i) {
-            var segment = matches[i].replace(/\(|\)/g, '');
-            if (generic.test(segment)) {
-                var a = parseInt(segment);
-                costs.push(a);
-                card.cmc += a;
-            } else if (segment.length === 1) {
-                costs.push(segment);
-                card.cmc++;
-            } else if (segment.substr(0, 2) === '2/') {
-                costs.push([2, segment.charAt(2)]);
-                card.cmc += 2;
-            } else { // Hybrid or Phyrexian
-                costs.push([segment.charAt(0), segment.charAt(2)]);
-                card.cmc++;
-            }
-        }
-        card.costs = costs;
-    }
-
-    /**
-     * Parse the types from the typeline
-     */
-    function parseTypes() {
-        var parts = card.typeline.split('-');
-        var primary = parts[0].trim().toLowerCase();
-
-        // Card types. Rule 204.2a
-        card.types = [];
-        [
-            "artifact", "creature", "enchantment", "instant", "land", "plane",
-            "planeswalker", "scheme", "sorcery", "tribal", "vanguard"
-        ].forEach(function(cardType) {
-            if (primary.indexOf(cardType) !== -1) {
-                card.types.push(cardType);
-            }
-        });
-
-        var supertypes = [];
-        [
-            "basic", "legendary", "ongoing", "snow", "world"
-        ].forEach(function(superType) {
-            if (primary.indexOf(superType) !== -1) {
-                supertypes.push(superType);
-            }
-        });
-        if (supertypes.length > 0) {
-            card.supertypes = supertypes;
-        }
-
-        if (parts.length > 1) {
-            card.subtypes = parts[1].trim().toLowerCase().split(' ');
-        }
-    }
-
-    /**
-     * Parse out information from rules
-     */
-    function parseRules() {
-        function startsWith(str, test) {
-            return str.substr(0, test.length) === test;
-        }
-
-        var detectKeywords = [
-            "deathtouch", "defender", "double strike", "first strike", "flash",
-            "flying", "haste", "hexproof", "intimidate", "landfall",
-            "plainswalk", "islandwalk", "swampwalk", "mountainwalk", "forestwalk", // landwalk
-            "lifelink", "reach", "shroud", "trample", "vigilance",
-            "battle cry", "flanking", "infect", "persist", "undying", "wither"
-        ];
-
-        var cardName = card.name;
-        var keywordPattern = /^(\w+(?:\s\w+)?)/;
-        card.rules.forEach(function(line) {
-            line = line.trim();
-            if (startsWith(line, cardName + " is unblockable.")) {
-                card.unblockable = true;
-            } else if (startsWith(line, cardName + " is indestructible.")) {
-                card.indestructible = true;
-            } else if (startsWith(line, cardName + " enters the battlefield tapped.")) {
-                card.enterTapped = true;
-            } else if (startsWith(line, "Annihilator")) {
-                var matches = line.match(/^Annihilator (\d+)/);
-                card.annihilator = parseInt(matches[1]);
-            } else if (startsWith(line, "Bloodthirst")) {
-                var matches = line.match(/^Bloodthirst (\d+)/);
-                if (matches !== null) {
-                    card.bloodthirst = parseInt(matches[1]);
-                }
-            } else {
-                var parts = line.toLowerCase().split(",");
-                parts.forEach(function(test) {
-                    var matches = test.trim().match(keywordPattern);
-                    if (matches !== null && detectKeywords.indexOf(matches[1]) !== -1) {
-                        var keyword = matches[1].replace(' ', '');
-                        card[keyword] = true;
-                    }
-                });
-            }
-        });
+        var cost = oracleUtils.normalizeCost(card.cost);
+        card.costs = oracleUtils.parseCost(cost);
+        card.cmc = oracleUtils.calculateConvertedManaCost(card.costs);
     }
 }
 
@@ -252,5 +152,5 @@ function completed() {
     for (var name in cardDb) {
         processCard(cardDb[name]);
     }
-    console.log(JSON.stringify(cardDb));
+    console.log(JSON.stringify(cardDb, null, 4));
 }
