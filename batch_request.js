@@ -45,7 +45,7 @@ exports.batchDownload = function (folderName, downloads, delayms, callback) {
         if (queue.length) {
             var task = queue.shift();
             task();
-        } else {
+        } else if (callback) {
             callback(errors);
         }
     }
