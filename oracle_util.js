@@ -50,7 +50,8 @@ var KEYWORDS = [
     "flying", "haste", "hexproof", "intimidate", "landfall",
     "plainswalk", "islandwalk", "swampwalk", "mountainwalk", "forestwalk", // landwalk
     "lifelink", "reach", "shroud", "trample", "vigilance",
-    "battle cry", "flanking", "infect", "persist", "undying", "wither"
+    "battle cry", "flanking", "infect", "persist", "undying", "wither",
+    "totem armor"
 ];
 
 /**
@@ -75,6 +76,15 @@ exports.parseRules = function(cardName, lines) {
             if (matches !== null) {
                 data.bloodthirst = parseInt(matches[1]);
             }
+        } else if (startsWith(line, "Equip ")) {
+            var matches = line.match(/^Equip (\S+)/);
+            data.equip = parseCost(matches[1]);
+        } else if (startsWith(line, "Kicker ")) {
+            var matches = line.match(/^Kicker (\S+)/);
+            data.kicker = parseCost(matches[1]);
+        } else if (startsWith(line, "Multikicker ")) {
+            var matches = line.match(/^Multikicker (\S+)/);
+            data.multikicker = parseCost(matches[1]);
         } else {
             var parts = line.toLowerCase().split(",");
             parts.forEach(function(test) {
@@ -160,7 +170,7 @@ exports.normalizeCost = function(cost) {
 /**
  * Parse cost string (eg. {3}{2/G}{B/G}) into cost array
  */
-exports.parseCost = function(cost) {
+function parseCost(cost) {
     var costs = [];
     var matches = cost.match(/{([^}]+)}/g);
     if (matches !== null) {
@@ -182,7 +192,8 @@ exports.parseCost = function(cost) {
         });
     }
     return costs;
-};
+}
+exports.parseCost = parseCost;
 
 /**
  * Calculate the Converted Mana Cost for cost array
