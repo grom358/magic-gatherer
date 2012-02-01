@@ -12,4 +12,4 @@ cards.forEach(function(cardName) {
         filename: cardName + '.html'
     });
 });
-request.batchDownload('cards_test', downloads, 5000);
+request.batchDownload('cards', downloads, 5000);
