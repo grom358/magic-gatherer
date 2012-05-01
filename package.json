@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "jsdom": ">=0.2.10",
-    "reqeust": ">=2.9.100"
+    "request": ">=2.9.100"
   },
   "licenses": [
     {
