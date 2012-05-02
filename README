@@ -1,13 +1,14 @@
-Client/Server for playing Magic the Gathering, supporting 1v1 modern format.
+Tool for extracting card information from gatherer.wizards.com
 
-==PLANNED FEATURES==
-* Support all cards in modern format
-* Server will enforce the rules as per the comprehensive rules
-* Server game engine will provide an API for cards to implement abilities/spells against
+==INSTALL==
+Install node and npm. To setup dependencies run:
+$ npm install
 
-==ROADMAP==
-* Oracle script for grabbing card information from gatherer.wizards.com
-* Create tool to allow user to submit deck build, server will check deck is legal
-* Build lobby, connect to game room
-* Create basic engine for playing game of magic
-* Expand engine to support all cards in modern format
+==README==
+To download sets, modify sets.json with the sets you wish to download and run
+$ nodejs gatherer.js
+$ nodejs oracle.js > db.json
+
+To download individual cards, modify dotp2012.json with the list of cards you wish to download and run
+$ nodejs gatherer_cards.js
+$ nodejs oracle_card.js > db_cards.json
